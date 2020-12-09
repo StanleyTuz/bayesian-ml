@@ -65,8 +65,9 @@ y = bd_sm['births_normed'].values[:,None]
 
 with pm.Model() as model:
     # GP1: long-term trends. Squared-exponential covariance function
-    length_long = pm.Normal('length_long',365,1.)
-    sigma_long = pm.HalfCauchy('sigma_long', 5)
+    length_long = pm.Normal('length_long',365,20.)
+    sigma_long = pm.Normal('sigma_long', 3,.3)
+    # sigma_long = pm.HalfCauchy('sigma_long', 5)
     # kernel
     kernel_long = sigma_long**2 * pm.gp.cov.ExpQuad(1, length_long, active_dims=[0]) # need to multiply by the variance
     # Gaussian process prior 1
@@ -74,24 +75,24 @@ with pm.Model() as model:
 
     # GP2: short-term trends. Squared-exponential covariance function
     # parameter priors
-    length_short = pm.Normal('length_short',10,.1) # smaller length scale
-    sigma_short = pm.HalfCauchy('sigma_short', 5)
+    length_short = pm.Normal('length_short',10,.5) # smaller length scale
+    sigma_short = pm.HalfCauchy('sigma_short', 1) # smaller param: narrow dist
     # kernel
     kernel_short = sigma_short**2 * pm.gp.cov.ExpQuad(1, length_short, active_dims=[0])
     # Gaussian process prior 1
     f_2 = pm.gp.Marginal(cov_func=kernel_short)
 
     # GP3: weekly trend squared exp * periodic ("local periodic kernel")
-    length_week = pm.Normal('length_week', 20, .5) # length scale of exp envelope
+    length_week = pm.Normal('length_week', 100, 10) # length scale of exp envelope
     ls_period_week = pm.Normal('ls_period_week', 2, .2) # 1/ls is amplitude of the periodic part
-    sigma_week = pm.HalfCauchy('sigma_week', 5)
+    sigma_week = pm.HalfCauchy('sigma_week', 1)
     kernel_week = sigma_week**2 * pm.gp.cov.ExpQuad(1, length_week, active_dims=[0]) \
         * pm.gp.cov.Periodic(1, period=7, ls=ls_period_week, active_dims=[0])
     f_3 = pm.gp.Marginal(cov_func=kernel_week)
 
     # GP4: yearly trend
     length_year = pm.Normal('length_year',1000,100)
-    ls_period_year = pm.Normal('ls_period_year',100,10)
+    ls_period_year = pm.Normal('ls_period_year',100,15)
     sigma_year = pm.HalfCauchy('sigma_year', 5)
     kernel_year = sigma_year**2 * pm.gp.cov.ExpQuad(1, length_year, active_dims=[0]) \
         * pm.gp.cov.Periodic(1, period=365.25, ls=ls_period_year, active_dims=[0])
