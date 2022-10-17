@@ -1,3 +1,4 @@
 .DS_Store
-pprg-env/
+.vscode
+.venv
 /numpyro/rethinking-master/
